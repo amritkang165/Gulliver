@@ -36,6 +36,7 @@ RULES = {
     "GV016": "order-by-random",
     "GV017": "deep-offset",
     "GV018": "count-for-existence",
+    "GV020": "null-comparison",
 }
 
 DEEP_OFFSET_THRESHOLD = 10_000
@@ -243,6 +244,14 @@ def lint(statement_tree: exp.Expression, dialect: str = "duckdb",
             add("GV018", "info",
                 "A subquery counts every matching row only to test that the count is zero.",
                 "Use NOT EXISTS (SELECT 1 FROM ...): it can stop at the first match.", comparison)
+
+    # GV020 null-comparison: equality/inequality with a literal NULL is never true.
+    for comparison in tree.find_all(exp.EQ, exp.NEQ):
+        if any(isinstance(side.unnest(), exp.Null) for side in (comparison.this, comparison.expression)):
+            add("GV020", "warn",
+                f"{comparison.sql(dialect=dialect)} is never true: a comparison with NULL gives NULL.",
+                "Use IS NULL / IS NOT NULL (or IS NOT DISTINCT FROM if you want NULL = NULL to match).",
+                comparison)
 
     # GV003 cartesian-join / GV008 non-equi-join
     for select in tree.find_all(exp.Select):
