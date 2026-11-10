@@ -17,6 +17,7 @@
 - `gulliver diff` says which columns differ for changed keys ("Rows differ in: country (1 key)"), computed inside the existing keys query, so no extra queries run and no values leave the engine (#46, #69).
 - `gulliver prune [--older-than 30d] [--keep-last N] [--dry-run]` cleans up old receipts and expired approvals while `gulliver audit verify` keeps passing (#79).
 - `gulliver lint --baseline FILE` / `--write-baseline [FILE]` and `[lint] baseline`: record today's findings and report (and fail on) only new ones on an existing repo. Findings match by path, rule and source line, so moved lines still match and copies or edits are new. The JSON result gets `baselined` and `baseline_fixed` (#45).
+- SQL syntax errors show readable parser details and line/column positions instead of internal token dumps. Syntax-specific retry advice is distinct from statement restrictions; tokenizer failures use an explicit end-of-input fallback (#128).
 
 ### Thanks
 - @bfs2021 for refusing NaN, infinite and negative budget limits (#40) and the GV001 fix for EXISTS subqueries (#50).
