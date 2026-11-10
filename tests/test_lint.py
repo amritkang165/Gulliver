@@ -279,10 +279,25 @@ def test_null_comparison_warns(comparison, dialect):
     finding, = [f for f in lint(stmt.select, dialect) if f.rule == "GV020"]
     assert finding.name == "null-comparison"
     assert finding.severity == "warn"
-    assert "never true" in finding.message
+    assert finding.message == (
+        f"{comparison.replace('!=', '<>')} is never true: a comparison with NULL gives NULL."
+    )
     assert "IS NULL" in finding.fix and "IS NOT NULL" in finding.fix
     assert "IS NOT DISTINCT FROM" in finding.fix
     assert finding.node is not None
+
+
+@pytest.mark.parametrize("dialect", ["duckdb", "postgres", "bigquery", "snowflake"])
+@pytest.mark.parametrize("comparison", [
+    "u.deleted_at = NULL", "NULL = u.deleted_at", "u.deleted_at <> NULL",
+])
+def test_null_comparison_message_preserves_join_operands(comparison, dialect):
+    stmt = classify(
+        f"select e.event_id from events e join users u on e.user_id = u.id and {comparison} limit 5",
+        dialect,
+    )
+    finding, = [f for f in lint(stmt.select, dialect) if f.rule == "GV020"]
+    assert finding.message == f"{comparison} is never true: a comparison with NULL gives NULL."
 
 
 @pytest.mark.parametrize("sql", [
